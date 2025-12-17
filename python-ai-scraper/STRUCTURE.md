@@ -74,3 +74,4 @@ scrapers = {
 - ✅ **Flexible** - Easy to add new sources
 - ✅ **Pythonic** - Functions are first-class citizens
 
+  
