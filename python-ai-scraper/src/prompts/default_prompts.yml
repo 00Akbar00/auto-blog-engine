@@ -1,0 +1,13 @@
+# Canonical prompts for the project
+summarize_article: |
+  You are an assistant that summarizes articles.
+  Summarize the following article in 3 short bullet points and a one-sentence TL;DR:
+  ---
+  {article_text}
+
+extract_entities: |
+  You are an assistant that extracts named entities from an article.
+  Return a JSON array of objects with keys: type, text, start, end.
+  Input:
+  ---
+  {article_text}
