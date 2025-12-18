@@ -1,9 +1,15 @@
 """Reddit domain module."""
-from .schemas import RedditPost, RedditScrapeRequest, RedditScrapeResponse
+from .schemas import (
+    RedditPost, 
+    RedditScrapeRequest, 
+    RedditMultiScrapeRequest,
+    RedditMultiScrapeResponse
+)
 
 __all__ = [
     "RedditPost",
     "RedditScrapeRequest",
-    "RedditScrapeResponse",
+    "RedditMultiScrapeRequest",
+    "RedditMultiScrapeResponse",
 ]
 

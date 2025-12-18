@@ -1,7 +1,10 @@
 """Scraper controller for handling scraping requests."""
 from fastapi import HTTPException, status
 
-from src.domains.reddit import RedditScrapeRequest, RedditScrapeResponse
+from src.domains.reddit import (
+    RedditMultiScrapeRequest,
+    RedditMultiScrapeResponse
+)
 from src.scraper import RedditScraper
 from src.utils.logger import get_logger
 
@@ -11,30 +14,31 @@ logger = get_logger(__name__)
 class ScraperController:
     """Controller for scraper endpoints."""
     
+
+
     @staticmethod
-    async def scrape_reddit(request: RedditScrapeRequest) -> RedditScrapeResponse:
+    async def scrape_multiple_subreddits(request: RedditMultiScrapeRequest) -> RedditMultiScrapeResponse:
         """
-        Handle Reddit scraping request.
+        Handle multi-subreddit scraping request.
         
         Args:
-            request: RedditScrapeRequest with scraping parameters
+            request: RedditMultiScrapeRequest
             
         Returns:
-            RedditScrapeResponse with scraped posts
+            RedditMultiScrapeResponse
             
         Raises:
             HTTPException: If scraping fails
         """
         try:
             scraper = RedditScraper()
-            posts = scraper.scrape_subreddit(request)
+            posts = scraper.scrape_subreddits(request)
             
-            return RedditScrapeResponse(
+            return RedditMultiScrapeResponse(
                 success=True,
-                subreddit=request.subreddit,
-                posts_count=len(posts),
+                total_posts=len(posts),
                 posts=posts,
-                message=f"Successfully scraped {len(posts)} posts from r/{request.subreddit}"
+                message=f"Successfully scraped {len(posts)} posts from {len(request.subreddits)} subreddits"
             )
             
         except ValueError as e:
@@ -47,6 +51,6 @@ class ScraperController:
             logger.error(f"Scraping error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to scrape subreddit: {str(e)}"
+                detail=f"Failed to scrape subreddits: {str(e)}"
             )
 

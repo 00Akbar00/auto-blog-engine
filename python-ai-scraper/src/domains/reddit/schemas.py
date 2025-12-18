@@ -27,13 +27,24 @@ class RedditPost(BaseModel):
     subreddit: str = Field(..., description="Subreddit name")
     is_self: bool = Field(..., description="Whether post is a self-post or link")
     over_18: bool = Field(..., description="Whether post is NSFW")
+    category: str = Field(default="Uncategorized", description="Assigned category for the post")
 
 
-class RedditScrapeResponse(BaseModel):
-    """Response schema for Reddit scraping."""
+class RedditMultiScrapeRequest(BaseModel):
+    """Request schema for scraping multiple subreddits."""
+    subreddits: List[str] = Field(..., description="List of subreddits to scrape")
+    limit: int = Field(default=1, description="Number of posts to scrape per subreddit")
+    sort_by: str = Field(default="hot", description="Sort posts by: hot, new, top, rising")
+    time_filter: Optional[str] = Field(default=None, description="Time filter for top posts")
+
+
+class RedditMultiScrapeResponse(BaseModel):
+    """Response schema for multi-subreddit scraping."""
     success: bool = Field(..., description="Whether scraping was successful")
-    subreddit: str = Field(..., description="Subreddit that was scraped")
-    posts_count: int = Field(..., description="Number of posts scraped")
+    total_posts: int = Field(..., description="Total number of posts scraped")
     posts: List[RedditPost] = Field(..., description="List of scraped posts")
-    message: Optional[str] = Field(default=None, description="Optional message or error description")
+    message: Optional[str] = Field(default=None, description="Optional message")
+
+
+
 

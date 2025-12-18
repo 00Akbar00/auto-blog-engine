@@ -1,9 +1,15 @@
 """Data source domains for scraping."""
-from .reddit import RedditPost, RedditScrapeRequest, RedditScrapeResponse
+from .reddit import (
+    RedditPost,
+    RedditScrapeRequest,
+    RedditMultiScrapeRequest,
+    RedditMultiScrapeResponse
+)
 
 __all__ = [
     "RedditPost",
     "RedditScrapeRequest",
-    "RedditScrapeResponse",
+    "RedditMultiScrapeRequest",
+    "RedditMultiScrapeResponse",
 ]
 

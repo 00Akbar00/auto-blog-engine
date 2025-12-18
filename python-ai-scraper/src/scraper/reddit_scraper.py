@@ -3,7 +3,7 @@ import praw
 from typing import List
 from datetime import datetime
 
-from src.domains.reddit import RedditPost, RedditScrapeRequest
+from src.domains.reddit import RedditPost, RedditScrapeRequest, RedditMultiScrapeRequest
 from src.utils.config import getenv
 from src.utils.logger import get_logger
 
@@ -31,13 +31,68 @@ class RedditScraper:
             user_agent=self.user_agent
         )
         logger.info("Reddit API client initialized")
-    
-    def scrape_subreddit(self, request: RedditScrapeRequest) -> List[RedditPost]:
+
+    @staticmethod
+    def _assign_category(subreddit: str) -> str:
         """
-        Scrape posts from a subreddit.
+        Assign a category to a subreddit based on its name.
         
         Args:
-            request: RedditScrapeRequest with scraping parameters
+            subreddit: Name of the subreddit
+            
+        Returns:
+            Category name
+        """
+        subreddit_lower = subreddit.lower()
+        
+        tech_keywords = ["python", "coding", "programming", "webdev", "dev", "technology", "linux", "software"]
+        entertainment_keywords = ["gaming", "games", "movies", "music", "anime", "entertainment"]
+        news_keywords = ["news", "worldnews", "politics"]
+        
+        if any(keyword in subreddit_lower for keyword in tech_keywords):
+            return "Tech"
+        elif any(keyword in subreddit_lower for keyword in entertainment_keywords):
+            return "Entertainment"
+        elif any(keyword in subreddit_lower for keyword in news_keywords):
+            return "News"
+        
+        return "General"
+    
+    def scrape_subreddits(self, request: RedditMultiScrapeRequest) -> List[RedditPost]:
+        """
+        Scrape posts from multiple subreddits.
+        
+        Args:
+            request: RedditMultiScrapeRequest
+            
+        Returns:
+            List of RedditPost objects
+        """
+        all_posts = []
+        
+        for sub in request.subreddits:
+            try:
+                # Create a single scrape request for each subreddit
+                single_request = RedditScrapeRequest(
+                    subreddit=sub,
+                    limit=request.limit,
+                    sort_by=request.sort_by,
+                    time_filter=request.time_filter
+                )
+                posts = self._scrape_subreddit(single_request)
+                all_posts.extend(posts)
+            except Exception as e:
+                logger.warning(f"Failed to scrape r/{sub} in multi-request: {e}")
+                continue
+                
+        return all_posts
+    
+    def _scrape_subreddit(self, request: RedditScrapeRequest) -> List[RedditPost]:
+        """
+        Internal method to scrape posts from a single subreddit.
+        
+        Args:
+            request: RedditScrapeRequest
             
         Returns:
             List of RedditPost objects
@@ -86,7 +141,8 @@ class RedditScraper:
                         created_utc=datetime.fromtimestamp(post.created_utc),
                         subreddit=post.subreddit.display_name,
                         is_self=post.is_self,
-                        over_18=post.over_18
+                        over_18=post.over_18,
+                        category=self._assign_category(post.subreddit.display_name)
                     )
                     reddit_posts.append(reddit_post)
                 except Exception as e:
