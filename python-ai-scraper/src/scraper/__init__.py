@@ -1,17 +1,16 @@
 """Scraper modules."""
 from .reddit_scraper import (
-    RedditScraper,
-    RedditPost,
-    RedditScrapeRequest,
-    RedditMultiScrapeRequest,
-    RedditMultiScrapeResponse
+    scrape_latest_post,
+    get_available_subreddits,
+    SimpleRedditPost,
+    SimpleRedditResponse,
+    SUBREDDIT_CATEGORIES
 )
 
 __all__ = [
-    "RedditScraper",
-    "RedditPost",
-    "RedditScrapeRequest",
-    "RedditMultiScrapeRequest",
-    "RedditMultiScrapeResponse",
+    "scrape_latest_post",
+    "get_available_subreddits", 
+    "SimpleRedditPost",
+    "SimpleRedditResponse",
+    "SUBREDDIT_CATEGORIES",
 ]
-

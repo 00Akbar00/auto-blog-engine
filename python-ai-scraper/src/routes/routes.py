@@ -3,25 +3,35 @@
 from fastapi import APIRouter
 
 from src.controllers.health_controller import HealthController
-from src.controllers.scraper_controller import ScraperController
-from src.scraper.reddit_scraper import RedditMultiScrapeRequest, RedditMultiScrapeResponse
+from src.controllers.scraper_controller import ScraperController, ScrapeRequest
+from src.scraper import SimpleRedditResponse
 
 router = APIRouter()
 
 
-@router.get("/health", tags=["health"])
+@router.get(
+    "/health",
+    tags=["health"]
+)
 async def health_check() -> dict:
     """Basic health check endpoint."""
     return await HealthController.health_check()
 
 
 @router.post(
-    "/api/scrape/reddit/multi",
-    response_model=RedditMultiScrapeResponse,
+    "/api/scrape/reddit",
+    response_model=SimpleRedditResponse,
     tags=["scraper"],
 )
-async def scrape_multiple_subreddits(request: RedditMultiScrapeRequest) -> RedditMultiScrapeResponse:
-    """Scrape posts from multiple Reddit subreddits."""
-    return await ScraperController.scrape_multiple_subreddits(request)
+async def scrape_subreddit(request: ScrapeRequest) -> SimpleRedditResponse:
+    """Scrape the latest post from a Reddit subreddit."""
+    return await ScraperController.scrape_subreddit(request)
 
 
+@router.get(
+    "/api/scrape/subreddits",
+    tags=["scraper"]
+)
+async def get_available_subreddits() -> dict:
+    """Get list of available subreddits and their categories."""
+    return await ScraperController.get_available_subreddits()

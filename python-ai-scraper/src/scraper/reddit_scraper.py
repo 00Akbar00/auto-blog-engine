@@ -1,7 +1,6 @@
-"""Reddit scraper using praw - All-in-one module with schemas and scraping logic."""
+"""Simple Reddit scraper - scrapes latest post from given subreddit."""
 import praw
-from typing import List, Optional
-from datetime import datetime
+from typing import Dict
 from pydantic import BaseModel, Field
 
 from src.utils.config import getenv
@@ -11,200 +10,124 @@ logger = get_logger(__name__)
 
 
 # ============================================================================
-# PYDANTIC SCHEMAS
+# HARD-CODED SUBREDDIT/CATEGORY MAPPINGS
 # ============================================================================
 
-class RedditScrapeRequest(BaseModel):
-    """Request schema for Reddit scraping."""
-    subreddit: str = Field(..., description="Name of the subreddit to scrape")
-    limit: int = Field(default=10, ge=1, le=100, description="Number of posts to scrape (1-100)")
-    sort_by: str = Field(default="hot", description="Sort posts by: hot, new, top, rising")
-    time_filter: Optional[str] = Field(default=None, description="Time filter for top posts: hour, day, week, month, year, all")
+SUBREDDIT_CATEGORIES = {
+    "python": "Tech",
+    "programming": "Tech", 
+    "webdev": "Tech",
+    "technology": "Tech",
+    "linux": "Tech",
+    "javascript": "Tech",
+    "machinelearning": "Tech",
+    "datascience": "Tech",
+    "gaming": "Entertainment",
+    "movies": "Entertainment", 
+    "music": "Entertainment",
+    "anime": "Entertainment",
+    "books": "Entertainment",
+    "news": "News",
+    "worldnews": "News",
+    "politics": "News",
+    "economics": "News",
+}
 
 
-class RedditPost(BaseModel):
-    """Schema for a single Reddit post."""
-    id: str = Field(..., description="Reddit post ID")
+# ============================================================================
+# SIMPLE SCHEMAS  
+# ============================================================================
+
+class SimpleRedditPost(BaseModel):
+    """Simple schema for Reddit post - only title, description, category."""
     title: str = Field(..., description="Post title")
-    author: str = Field(..., description="Post author username")
-    score: int = Field(..., description="Post upvote score")
-    upvote_ratio: float = Field(..., description="Upvote ratio (0-1)")
-    num_comments: int = Field(..., description="Number of comments")
-    url: str = Field(..., description="Post URL")
-    permalink: str = Field(..., description="Reddit permalink")
-    selftext: str = Field(default="", description="Post text content (if self-post)")
-    created_utc: datetime = Field(..., description="Post creation timestamp (UTC)")
-    subreddit: str = Field(..., description="Subreddit name")
-    is_self: bool = Field(..., description="Whether post is a self-post or link")
-    over_18: bool = Field(..., description="Whether post is NSFW")
-    category: str = Field(default="Uncategorized", description="Assigned category for the post")
+    description: str = Field(..., description="Post description/selftext") 
+    category: str = Field(..., description="Post category")
 
 
-class RedditMultiScrapeRequest(BaseModel):
-    """Request schema for scraping multiple subreddits."""
-    subreddits: List[str] = Field(..., description="List of subreddits to scrape")
-    limit: int = Field(default=1, description="Number of posts to scrape per subreddit")
-    sort_by: str = Field(default="hot", description="Sort posts by: hot, new, top, rising")
-    time_filter: Optional[str] = Field(default=None, description="Time filter for top posts")
-
-
-class RedditMultiScrapeResponse(BaseModel):
-    """Response schema for multi-subreddit scraping."""
+class SimpleRedditResponse(BaseModel):
+    """Simple response for Reddit scraping."""
     success: bool = Field(..., description="Whether scraping was successful")
-    total_posts: int = Field(..., description="Total number of posts scraped")
-    posts: List[RedditPost] = Field(..., description="List of scraped posts")
-    message: Optional[str] = Field(default=None, description="Optional message")
+    post: SimpleRedditPost = Field(..., description="The scraped post")
+    message: str = Field(..., description="Response message")
 
 
 # ============================================================================
-# REDDIT SCRAPER
+# SIMPLE SCRAPING FUNCTION
 # ============================================================================
 
-class RedditScraper:
-    """Scraper for Reddit posts using praw."""
+def scrape_latest_post(subreddit_name: str) -> Dict[str, str]:
+    """
+    Scrape the latest post from given subreddit.
+    Returns dict with title, description, category.
     
-    def __init__(self):
-        """Initialize Reddit API client."""
-        self.client_id = getenv("REDDIT_CLIENT_ID")
-        self.client_secret = getenv("REDDIT_CLIENT_SECRET")
-        self.user_agent = getenv("REDDIT_USER_AGENT", "auto-blog-scraper/1.0")
+    Args:
+        subreddit_name: Name of the subreddit to scrape
         
-        if not self.client_id or not self.client_secret:
+    Returns:
+        Dict containing title, description, and category
+        
+    Raises:
+        ValueError: If Reddit credentials not found or subreddit doesn't exist
+        Exception: If scraping fails
+    """
+    try:
+        # Get category from hard-coded mapping
+        category = SUBREDDIT_CATEGORIES.get(subreddit_name.lower(), "General")
+        
+        # Initialize Reddit client
+        client_id = getenv("REDDIT_CLIENT_ID")
+        client_secret = getenv("REDDIT_CLIENT_SECRET") 
+        user_agent = getenv("REDDIT_USER_AGENT", "auto-blog-scraper/1.0")
+        
+        if not client_id or not client_secret:
             raise ValueError(
                 "Reddit credentials not found. Please set REDDIT_CLIENT_ID, "
                 "REDDIT_CLIENT_SECRET, and REDDIT_USER_AGENT environment variables."
             )
-        
-        self.reddit = praw.Reddit(
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            user_agent=self.user_agent
+            
+        reddit = praw.Reddit(
+            client_id=client_id,
+            client_secret=client_secret,
+            user_agent=user_agent
         )
         logger.info("Reddit API client initialized")
-
-    @staticmethod
-    def _assign_category(subreddit: str) -> str:
-        """
-        Assign a category to a subreddit based on its name.
         
-        Args:
-            subreddit: Name of the subreddit
-            
-        Returns:
-            Category name
-        """
-        subreddit_lower = subreddit.lower()
-        
-        tech_keywords = ["python", "coding", "programming", "webdev", "dev", "technology", "linux", "software"]
-        entertainment_keywords = ["gaming", "games", "movies", "music", "anime", "entertainment"]
-        news_keywords = ["news", "worldnews", "politics"]
-        
-        if any(keyword in subreddit_lower for keyword in tech_keywords):
-            return "Tech"
-        elif any(keyword in subreddit_lower for keyword in entertainment_keywords):
-            return "Entertainment"
-        elif any(keyword in subreddit_lower for keyword in news_keywords):
-            return "News"
-        
-        return "General"
-    
-    def scrape_subreddits(self, request: RedditMultiScrapeRequest) -> List[RedditPost]:
-        """
-        Scrape posts from multiple subreddits.
-        
-        Args:
-            request: RedditMultiScrapeRequest
-            
-        Returns:
-            List of RedditPost objects
-        """
-        all_posts = []
-        
-        for sub in request.subreddits:
-            try:
-                # Create a single scrape request for each subreddit
-                single_request = RedditScrapeRequest(
-                    subreddit=sub,
-                    limit=request.limit,
-                    sort_by=request.sort_by,
-                    time_filter=request.time_filter
-                )
-                posts = self._scrape_subreddit(single_request)
-                all_posts.extend(posts)
-            except Exception as e:
-                logger.warning(f"Failed to scrape r/{sub} in multi-request: {e}")
-                continue
-                
-        return all_posts
-    
-    def _scrape_subreddit(self, request: RedditScrapeRequest) -> List[RedditPost]:
-        """
-        Internal method to scrape posts from a single subreddit.
-        
-        Args:
-            request: RedditScrapeRequest
-            
-        Returns:
-            List of RedditPost objects
-            
-        Raises:
-            Exception: If subreddit doesn't exist or scraping fails
-        """
+        # Get subreddit and validate it exists
+        subreddit = reddit.subreddit(subreddit_name)
         try:
-            subreddit = self.reddit.subreddit(request.subreddit)
-            
-            # Validate subreddit exists
-            try:
-                subreddit.display_name
-            except Exception as e:
-                logger.error(f"Subreddit '{request.subreddit}' not found: {e}")
-                raise ValueError(f"Subreddit '{request.subreddit}' not found or inaccessible")
-            
-            # Get posts based on sort_by
-            if request.sort_by == "hot":
-                posts = subreddit.hot(limit=request.limit)
-            elif request.sort_by == "new":
-                posts = subreddit.new(limit=request.limit)
-            elif request.sort_by == "top":
-                time_filter = request.time_filter or "day"
-                posts = subreddit.top(limit=request.limit, time_filter=time_filter)
-            elif request.sort_by == "rising":
-                posts = subreddit.rising(limit=request.limit)
-            else:
-                logger.warning(f"Invalid sort_by '{request.sort_by}', defaulting to 'hot'")
-                posts = subreddit.hot(limit=request.limit)
-            
-            # Convert to RedditPost objects
-            reddit_posts = []
-            for post in posts:
-                try:
-                    reddit_post = RedditPost(
-                        id=post.id,
-                        title=post.title,
-                        author=str(post.author) if post.author else "[deleted]",
-                        score=post.score,
-                        upvote_ratio=post.upvote_ratio,
-                        num_comments=post.num_comments,
-                        url=post.url,
-                        permalink=f"https://reddit.com{post.permalink}",
-                        selftext=post.selftext[:5000] if post.selftext else "",  # Limit text length
-                        created_utc=datetime.fromtimestamp(post.created_utc),
-                        subreddit=post.subreddit.display_name,
-                        is_self=post.is_self,
-                        over_18=post.over_18,
-                        category=self._assign_category(post.subreddit.display_name)
-                    )
-                    reddit_posts.append(reddit_post)
-                except Exception as e:
-                    logger.warning(f"Error processing post {post.id}: {e}")
-                    continue
-            
-            logger.info(f"Successfully scraped {len(reddit_posts)} posts from r/{request.subreddit}")
-            return reddit_posts
-            
-        except ValueError:
-            raise
+            subreddit.display_name
         except Exception as e:
-            logger.error(f"Error scraping subreddit '{request.subreddit}': {e}")
-            raise Exception(f"Failed to scrape subreddit: {str(e)}")
+            logger.error(f"Subreddit '{subreddit_name}' not found: {e}")
+            raise ValueError(f"Subreddit '{subreddit_name}' not found or inaccessible")
+        
+        # Get the latest post (newest first)
+        latest_post = next(subreddit.new(limit=1))
+        
+        # Extract title and description (selftext)
+        title = latest_post.title
+        description = latest_post.selftext if latest_post.selftext else "No description available"
+        
+        logger.info(f"Successfully scraped latest post from r/{subreddit_name}: '{title[:50]}...'")
+        
+        return {
+            "title": title,
+            "description": description,
+            "category": category
+        }
+        
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(f"Error scraping subreddit '{subreddit_name}': {e}")
+        raise Exception(f"Failed to scrape subreddit: {str(e)}")
 
+
+def get_available_subreddits() -> Dict[str, str]:
+    """
+    Get the list of available subreddits and their categories.
+    
+    Returns:
+        Dict mapping subreddit names to categories
+    """
+    return SUBREDDIT_CATEGORIES.copy()
