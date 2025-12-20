@@ -1,14 +1,64 @@
-"""Reddit scraper using praw."""
+"""Reddit scraper using praw - All-in-one module with schemas and scraping logic."""
 import praw
-from typing import List
+from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel, Field
 
-from src.domains.reddit import RedditPost, RedditScrapeRequest, RedditMultiScrapeRequest
 from src.utils.config import getenv
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+
+# ============================================================================
+# PYDANTIC SCHEMAS
+# ============================================================================
+
+class RedditScrapeRequest(BaseModel):
+    """Request schema for Reddit scraping."""
+    subreddit: str = Field(..., description="Name of the subreddit to scrape")
+    limit: int = Field(default=10, ge=1, le=100, description="Number of posts to scrape (1-100)")
+    sort_by: str = Field(default="hot", description="Sort posts by: hot, new, top, rising")
+    time_filter: Optional[str] = Field(default=None, description="Time filter for top posts: hour, day, week, month, year, all")
+
+
+class RedditPost(BaseModel):
+    """Schema for a single Reddit post."""
+    id: str = Field(..., description="Reddit post ID")
+    title: str = Field(..., description="Post title")
+    author: str = Field(..., description="Post author username")
+    score: int = Field(..., description="Post upvote score")
+    upvote_ratio: float = Field(..., description="Upvote ratio (0-1)")
+    num_comments: int = Field(..., description="Number of comments")
+    url: str = Field(..., description="Post URL")
+    permalink: str = Field(..., description="Reddit permalink")
+    selftext: str = Field(default="", description="Post text content (if self-post)")
+    created_utc: datetime = Field(..., description="Post creation timestamp (UTC)")
+    subreddit: str = Field(..., description="Subreddit name")
+    is_self: bool = Field(..., description="Whether post is a self-post or link")
+    over_18: bool = Field(..., description="Whether post is NSFW")
+    category: str = Field(default="Uncategorized", description="Assigned category for the post")
+
+
+class RedditMultiScrapeRequest(BaseModel):
+    """Request schema for scraping multiple subreddits."""
+    subreddits: List[str] = Field(..., description="List of subreddits to scrape")
+    limit: int = Field(default=1, description="Number of posts to scrape per subreddit")
+    sort_by: str = Field(default="hot", description="Sort posts by: hot, new, top, rising")
+    time_filter: Optional[str] = Field(default=None, description="Time filter for top posts")
+
+
+class RedditMultiScrapeResponse(BaseModel):
+    """Response schema for multi-subreddit scraping."""
+    success: bool = Field(..., description="Whether scraping was successful")
+    total_posts: int = Field(..., description="Total number of posts scraped")
+    posts: List[RedditPost] = Field(..., description="List of scraped posts")
+    message: Optional[str] = Field(default=None, description="Optional message")
+
+
+# ============================================================================
+# REDDIT SCRAPER
+# ============================================================================
 
 class RedditScraper:
     """Scraper for Reddit posts using praw."""

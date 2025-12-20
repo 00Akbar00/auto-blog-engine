@@ -2,14 +2,12 @@
 from fastapi import APIRouter
 
 from src.controllers.scraper_controller import ScraperController
-from src.domains.reddit import (
+from src.scraper.reddit_scraper import (
     RedditMultiScrapeRequest,
     RedditMultiScrapeResponse
 )
 
-router = APIRouter(prefix="/api/v1", tags=["scraper"])
-
-
+router = APIRouter(prefix="/api", tags=["scraper"])
 
 
 

@@ -1,11 +1,11 @@
 """Scraper controller for handling scraping requests."""
 from fastapi import HTTPException, status
 
-from src.domains.reddit import (
+from src.scraper.reddit_scraper import (
     RedditMultiScrapeRequest,
-    RedditMultiScrapeResponse
+    RedditMultiScrapeResponse,
+    RedditScraper
 )
-from src.scraper import RedditScraper
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
