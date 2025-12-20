@@ -4,9 +4,10 @@ Professional, modular project structure for scraping and AI processing with Fast
 
 ## Overview
 
-- `src/api/`: FastAPI routes and application
-- `src/services/`: Business logic and scraper services
-- `src/models/`: Pydantic schemas for requests/responses
+- `src/app.py`: FastAPI application initialization
+- `src/routes/`: FastAPI routes (single file)
+- `src/scraper/`: Scraper implementations + related Pydantic schemas
+- `src/controllers/`: Endpoint controllers (business logic)
 - `src/utils/`: Configuration, logging, and utilities
 - `src/storage/`: Storage utilities
 - `src/prompts/`: AI prompt templates (YAML/MD)
@@ -65,13 +66,14 @@ curl -X POST "http://localhost:8000/api/v1/scrape/reddit" \
 ```
 python-ai-scraper/
 ├── src/
-│   ├── api/               # FastAPI application
-│   │   ├── main.py        # FastAPI app initialization
-│   │   └── routes.py      # API endpoints
-│   ├── services/         # Business logic services
-│   │   └── reddit_service.py  # Reddit scraper service
-│   ├── models/            # Data models and schemas
-│   │   └── schemas.py     # Pydantic request/response models
+│   ├── app.py             # FastAPI app initialization
+│   ├── routes/            # API endpoints
+│   │   └── routes.py       # all routes in one file
+│   ├── controllers/        # endpoint controllers (logic)
+│   │   ├── health_controller.py
+│   │   └── scraper_controller.py
+│   ├── scraper/           # Scraper logic + related schemas
+│   │   └── reddit_scraper.py
 │   ├── utils/             # Utilities
 │   │   ├── config.py      # Configuration helpers
 │   │   └── logger.py      # Logging setup
@@ -84,7 +86,7 @@ python-ai-scraper/
 
 ## Features
 
-- **Clean Architecture**: Service-based design with separation of concerns
+- **Clean Architecture**: Simple routing layer with scraper logic kept inside `src/scraper/`
 - **FastAPI**: Modern, fast API framework with automatic documentation
 - **Reddit Scraper**: Professional Reddit scraping using praw
 - **Type Safety**: Pydantic models for request/response validation

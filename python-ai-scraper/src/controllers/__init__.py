@@ -1,6 +1,8 @@
-"""Controllers for handling business logic."""
-from .scraper_controller import ScraperController
-from .health_controller import HealthController
+"""Controllers package."""
 
-__all__ = ["ScraperController", "HealthController"]
+from .health_controller import HealthController
+from .scraper_controller import ScraperController
+
+__all__ = ["HealthController", "ScraperController"]
+
 

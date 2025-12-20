@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.routes import scraper_router, health_router
+from src.routes import router
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -24,8 +24,7 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(health_router)
-app.include_router(scraper_router)
+app.include_router(router)
 
 
 @app.on_event("startup")

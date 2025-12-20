@@ -1,77 +1,54 @@
-# Clean Function-Based Scraper Structure
+# Python AI Scraper Structure (Clean + Practical)
 
 ## 📁 File Organization
 
 ```
-src/scraper/
-├── scraper.py    # Main scraping functions (reddit, run, filters)
-├── models.py     # Data models (ScrapedContent, ScrapeConfig)
-├── utils.py      # Utilities (rate limiting, retries, text cleaning)
-├── parser.py     # HTML parsing functions
-├── browser.py    # Browser automation functions (Playwright)
-└── __init__.py   # Package exports
+src/
+├── app.py                # FastAPI app setup
+├── routes/
+│   └── routes.py         # GET /health + POST /api/scrape/reddit/multi
+├── controllers/
+│   ├── health_controller.py
+│   └── scraper_controller.py
+├── scraper/
+│   └── reddit_scraper.py # Reddit scraper + all scraper-related schemas
+├── utils/
+│   ├── config.py         # getenv() helper
+│   └── logger.py         # logging setup
+└── storage/
+    └── filesystem.py     # optional file storage helpers
 ```
 
-**Total: 6 files** (down from 9+ files with classes)
+**Principle:** keep “scraper-related data” (schemas + scraping logic) inside the scraper module(s), and keep the API layer thin.
 
 ## 🎯 Key Principles
 
-1. **Function-based** - No classes, just clean functions
-2. **Simple imports** - `from scraper import run, scrape_reddit`
-3. **Easy to extend** - Just add new functions to `scraper.py`
-4. **Less files** - Consolidated logic, no unnecessary abstractions
+1. **Scraper module owns scraper data** - request/response schemas + scraping logic live together
+2. **Thin API layer** - routes call scraper module directly
+3. **Easy to extend** - add new modules under `src/scraper/` and expose new routes
+4. **Neat structure** - minimal folders, no redundant “domain/controller” layers
 
 ## 📝 Usage Examples
 
 ### Basic Usage
 ```python
-from scraper import run, scrape_reddit
-from scraper.models import ScrapeConfig
+from src.scraper.reddit_scraper import RedditScraper, RedditMultiScrapeRequest
 
-# Using config file
-results = run("config.yml")
-
-# Direct function call
-config = ScrapeConfig(source="reddit", subreddit="python", limit=10)
-results = scrape_reddit(config)
-```
-
-### Browser Scraping
-```python
-from scraper.browser import fetch_page, fetch_multiple_pages
-from scraper.parser import parse_article
-
-# Single page
-html = fetch_page("https://example.com", wait_for=".content")
-article = parse_article(html)
-
-# Multiple pages
-urls = ["https://site1.com", "https://site2.com"]
-results = fetch_multiple_pages(urls)
+scraper = RedditScraper()
+posts = scraper.scrape_subreddits(
+    RedditMultiScrapeRequest(subreddits=["python", "learnpython"], limit=3, sort_by="hot")
+)
+print(len(posts))
 ```
 
 ## 🔧 Adding New Sources
 
-Just add a new function to `scraper.py`:
-
-```python
-def scrape_hackernews(config: ScrapeConfig) -> List[ScrapedContent]:
-    """Scrape HackerNews."""
-    # Your implementation here
-    pass
-
-# Register in run() function
-scrapers = {
-    "reddit": scrape_reddit,
-    "hackernews": scrape_hackernews,  # Add here
-}
-```
+Just add a new module under `src/scraper/` (example: `hackernews_scraper.py`) and call it from a route in `src/routes/`.
 
 ## ✨ Benefits
 
-- ✅ **Simpler** - No class inheritance, just functions
-- ✅ **Cleaner** - Less files, easier to navigate
-- ✅ **Flexible** - Easy to add new sources
-- ✅ **Pythonic** - Functions are first-class citizens
+- ✅ **Simpler** - no redundant layering
+- ✅ **Cleaner** - scraper logic is centralized in the scraper module(s)
+- ✅ **Flexible** - easy to add new sources/routes
 
   
