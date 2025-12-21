@@ -1,5 +1,3 @@
-"""Scraper controller for handling scraping requests."""
-
 from fastapi import HTTPException, status
 from pydantic import BaseModel, Field
 

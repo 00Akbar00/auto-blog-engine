@@ -1,8 +1,6 @@
-"""Simple Reddit scraper - scrapes latest post from given subreddit."""
 import praw
 from typing import Dict
 from pydantic import BaseModel, Field
-
 from src.utils.config import getenv
 from src.utils.logger import get_logger
 
@@ -57,20 +55,6 @@ class SimpleRedditResponse(BaseModel):
 # ============================================================================
 
 def scrape_latest_post(subreddit_name: str) -> Dict[str, str]:
-    """
-    Scrape the latest post from given subreddit.
-    Returns dict with title, description, category.
-    
-    Args:
-        subreddit_name: Name of the subreddit to scrape
-        
-    Returns:
-        Dict containing title, description, and category
-        
-    Raises:
-        ValueError: If Reddit credentials not found or subreddit doesn't exist
-        Exception: If scraping fails
-    """
     try:
         # Get category from hard-coded mapping
         category = SUBREDDIT_CATEGORIES.get(subreddit_name.lower(), "General")
