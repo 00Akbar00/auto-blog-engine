@@ -106,12 +106,3 @@ def scrape_latest_post(subreddit_name: str) -> Dict[str, str]:
         logger.error(f"Error scraping subreddit '{subreddit_name}': {e}")
         raise Exception(f"Failed to scrape subreddit: {str(e)}")
 
-
-def get_available_subreddits() -> Dict[str, str]:
-    """
-    Get the list of available subreddits and their categories.
-    
-    Returns:
-        Dict mapping subreddit names to categories
-    """
-    return SUBREDDIT_CATEGORIES.copy()

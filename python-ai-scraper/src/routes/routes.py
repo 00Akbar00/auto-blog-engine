@@ -27,11 +27,3 @@ async def scrape_subreddit(request: ScrapeRequest) -> SimpleRedditResponse:
     """Scrape the latest post from a Reddit subreddit."""
     return await ScraperController.scrape_subreddit(request)
 
-
-@router.get(
-    "/api/scrape/subreddits",
-    tags=["scraper"]
-)
-async def get_available_subreddits() -> dict:
-    """Get list of available subreddits and their categories."""
-    return await ScraperController.get_available_subreddits()

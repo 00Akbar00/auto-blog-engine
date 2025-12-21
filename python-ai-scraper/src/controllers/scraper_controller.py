@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 
 from src.scraper.reddit_scraper import (
     scrape_latest_post,
-    get_available_subreddits,
     SimpleRedditPost,
     SimpleRedditResponse,
 )
@@ -50,21 +49,3 @@ class ScraperController:
                 detail=f"Failed to scrape subreddit: {str(e)}",
             )
 
-    @staticmethod
-    async def get_available_subreddits() -> dict:
-        """
-        Get list of available subreddits and their categories.
-        """
-        try:
-            subreddits = get_available_subreddits()
-            return {
-                "success": True,
-                "subreddits": subreddits,
-                "message": f"Found {len(subreddits)} available subreddits"
-            }
-        except Exception as e:
-            logger.error(f"Error getting subreddits: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to get subreddits: {str(e)}",
-            )
