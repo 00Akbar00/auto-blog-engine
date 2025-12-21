@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from pydantic import BaseModel, Field
 
-from src.scraper import (
+from src.scraper.reddit_scraper import (
     scrape_latest_post,
     get_available_subreddits,
     SimpleRedditPost,

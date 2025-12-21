@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from src.controllers.health_controller import HealthController
 from src.controllers.scraper_controller import ScraperController, ScrapeRequest
-from src.scraper import SimpleRedditResponse
+from src.scraper.reddit_scraper import SimpleRedditResponse
 
 router = APIRouter()
 
