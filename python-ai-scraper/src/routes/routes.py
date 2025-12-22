@@ -9,15 +9,6 @@ from src.scraper.reddit_scraper import SimpleRedditResponse
 router = APIRouter()
 
 
-@router.get(
-    "/health",
-    tags=["health"]
-)
-async def health_check() -> dict:
-    """Basic health check endpoint."""
-    return await HealthController.health_check()
-
-
 @router.post(
     "/api/scrape/reddit",
     response_model=SimpleRedditResponse,
