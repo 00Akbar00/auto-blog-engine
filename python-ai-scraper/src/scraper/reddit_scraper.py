@@ -54,41 +54,36 @@ class SimpleRedditResponse(BaseModel):
 # SIMPLE SCRAPING FUNCTION
 # ============================================================================
 
-def scrape_latest_post(subreddit_name: str) -> Dict[str, str]:
+def scrape_latest_post(subreddit_name: str) -> Dict[str, str]:      
     try:
-        # Get category from hard-coded mapping
         category = SUBREDDIT_CATEGORIES.get(subreddit_name.lower(), "General")
-        
-        # Initialize Reddit client
         client_id = getenv("REDDIT_CLIENT_ID")
         client_secret = getenv("REDDIT_CLIENT_SECRET") 
         user_agent = getenv("REDDIT_USER_AGENT", "auto-blog-scraper/1.0")
-        
-        if not client_id or not client_secret:
+
+        if not client_id:
             raise ValueError(
-                "Reddit credentials not found. Please set REDDIT_CLIENT_ID, "
+                "Reddit credentials not found. Please set REDDIT_CLIENT_ID."
+            )
+        if not client_secret:
+            raise ValueError(
                 "REDDIT_CLIENT_SECRET, and REDDIT_USER_AGENT environment variables."
             )
-            
+
+        # Reddit client conneciton                
         reddit = praw.Reddit(
             client_id=client_id,
             client_secret=client_secret,
             user_agent=user_agent
         )
+
         logger.info("Reddit API client initialized")
         
-        # Get subreddit and validate it exists
+        # Get subreddit
         subreddit = reddit.subreddit(subreddit_name)
-        try:
-            subreddit.display_name
-        except Exception as e:
-            logger.error(f"Subreddit '{subreddit_name}' not found: {e}")
-            raise ValueError(f"Subreddit '{subreddit_name}' not found or inaccessible")
         
-        # Get the latest post (newest first)
+        # Get the latest post title and description
         latest_post = next(subreddit.new(limit=1))
-        
-        # Extract title and description (selftext)
         title = latest_post.title
         description = latest_post.selftext if latest_post.selftext else "No description available"
         
@@ -99,9 +94,6 @@ def scrape_latest_post(subreddit_name: str) -> Dict[str, str]:
             "description": description,
             "category": category
         }
-        
-    except ValueError:
-        raise
     except Exception as e:
         logger.error(f"Error scraping subreddit '{subreddit_name}': {e}")
         raise Exception(f"Failed to scrape subreddit: {str(e)}")
